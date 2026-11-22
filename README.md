@@ -57,7 +57,7 @@ Pinned toolchain — any other version may produce other bytes:
 - aceapex at commit 8ae26bf (its `src/` and `c/`)
 - `chr1.aet` (59 659 568 B, sha256 5a4139c6064c75cb0730469b7454c21c92f6d92c3bc15b491d951d2f2c219611) is shipped as is: it was
   packed from UCSC hg38 chr1.fa (sha256 04ee6db2…08ee0) at ACEAPEX level 2, 64 KiB blocks, LIT_CHUNK = FSE_CHUNK = 64 KiB, with
-  a packer linked to libzstd 1.4.8; it is not rebuilt by `build.sh` and is not in this repository (59.7 MB). With it at
+  a packer linked to libzstd 1.4.8; it is not rebuilt by `build.sh` and is not in this repository (59.7 MB): it is attached to Release v1.0.0. With it at
   `build/out/chr1.aet` the build gives the sha256 below; without it the page is built without Genome Jump (other bytes).
 
 ```

@@ -2,7 +2,7 @@
 # THE LAST ARCHIVE - one command: world -> three archives -> wasm decoders -> game bundle -> TheLastArchive.html (one file).
 # Needs: python3 + numpy, g++, an aceapex checkout (ACEAPEX, default ~/pubrepo), zstd 1.5.7 and lz4 1.10.0 sources,
 # emscripten (emsdk), node + npm packages three@0.170.0 and esbuild@0.24.0 (npm install in this folder).
-# ACEAPEX must be main 8ae26bf or newer (2.6.4 fix: the C99 decoder on 32-bit clang/wasm32). build/out/chr1.aet (shipped) adds GENOME JUMP; CHR1=<chr1.fa> repacks it (needs libzstd).
+# ACEAPEX must be main 8ae26bf or newer (fix: the C99 decoder on 32-bit clang/wasm32). build/out/chr1.aet (shipped) adds GENOME JUMP; CHR1=<chr1.fa> repacks it (needs libzstd).
 set -euo pipefail
 cd "$(dirname "$0")"
 ACEAPEX="${ACEAPEX:-$HOME/pubrepo}"; ZSTD="${ZSTD:-$HOME/pubrepo/.wk/zstd-1.5.7}"; LZ4="${LZ4:-lz4-1.10.0}"
