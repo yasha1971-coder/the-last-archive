@@ -1,0 +1,17 @@
+{
+  "name": "la2",
+  "version": "1.0.0",
+  "description": "THE LAST ARCHIVE - ACEAPEX demo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "esbuild": "0.24.0",
+    "three": "0.170.0"
+  }
+}

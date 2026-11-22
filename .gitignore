@@ -1,0 +1,12 @@
+node_modules/
+build/out/
+build/z/
+build/chunks/
+build/*.a
+build/pack
+build/ax_pack
+build/la2_wasm.js
+build/game.js
+TheLastArchive.html
+lz4-*/
+zstd-*/

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE LAST ARCHIVE — an ACEAPEX demo</title>
+<style>
+:root{--c:#9fe8ff;--g:#ffd27a;--bg:rgba(6,10,18,.82)}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:"Segoe UI",system-ui,sans-serif;color:#d8e6f0}
+#view{position:fixed;inset:0;width:100%;height:100%;display:block}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;letter-spacing:.3em;color:var(--c)}
+.screen{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:3vh 0;box-sizing:border-box;background:radial-gradient(ellipse at center,rgba(5,12,24,.55),rgba(0,0,0,.92))}
+.screen.on{display:flex}
+.panel{margin:auto;max-width:900px;padding:36px 44px;background:var(--bg);border:1px solid rgba(159,232,255,.25);border-radius:6px;box-shadow:0 0 60px rgba(80,180,255,.15)}
+h1{margin:0;font-size:64px;letter-spacing:.18em;font-weight:800;background:linear-gradient(180deg,#fff,#9fe8ff 60%,#3a7ab0);-webkit-background-clip:text;color:transparent;text-shadow:0 0 40px rgba(120,200,255,.25)}
+h2{margin:0 0 18px;letter-spacing:.2em;color:var(--c);font-weight:600}
+.tag{margin:10px 0 28px;color:#a9bccc;font-size:17px;letter-spacing:.04em}
+.tag b{color:var(--g)}
+.btn{display:block;width:100%;margin:10px 0;padding:14px 18px;font-size:17px;letter-spacing:.22em;text-align:left;color:#e6f6ff;background:linear-gradient(90deg,rgba(80,170,230,.18),rgba(80,170,230,.02));border:1px solid rgba(159,232,255,.3);border-radius:3px;cursor:pointer;transition:.15s}
+.btn:hover{background:linear-gradient(90deg,rgba(120,210,255,.38),rgba(80,170,230,.06));padding-left:26px;border-color:var(--c)}
+.btn.small{display:inline-block;width:auto;margin-top:22px}
+.foot{margin-top:24px;font-size:12px;color:#7d90a0;letter-spacing:.08em}
+label{display:flex;justify-content:space-between;align-items:center;gap:30px;margin:12px 0;font-size:16px;letter-spacing:.06em}
+select,input[type=range]{background:#0d1726;color:#e6f6ff;border:1px solid rgba(159,232,255,.35);padding:6px;min-width:200px}
+p{line-height:1.6;color:#b9c9d6} small{color:#8aa0b2}
+table.bench{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px} .bench th,.bench td{border-bottom:1px solid rgba(159,232,255,.15);padding:8px 10px;text-align:left;vertical-align:top}
+.bench th{color:var(--c);font-weight:600} .verdict{color:#e6f6ff} .bad{color:#ff7a7a}
+.prog{height:4px;background:#13243a;margin:10px 0}.prog i{display:block;height:100%;width:0;background:var(--c)}
+#hud{position:fixed;inset:0;pointer-events:none;display:none} #hud.on{display:block}
+#where{position:absolute;left:22px;top:18px;font-size:18px;letter-spacing:.12em;color:#e6f6ff;text-shadow:0 0 8px #000}
+#meters{position:absolute;right:22px;top:18px;width:250px;font-size:12px;letter-spacing:.12em}
+.meter{margin-bottom:10px}.meter div{height:6px;background:rgba(255,255,255,.12);margin-top:4px}.meter i{display:block;height:100%;background:var(--c);transition:width .2s}
+#stab i{background:#7dff9a}
+#vitals{position:absolute;left:22px;bottom:22px;width:260px;font-size:12px;letter-spacing:.12em} #hp i{background:#ff6a5a} #en i{background:#7ab8ff}
+#shield{position:absolute;inset:0;border:3px solid rgba(120,190,255,.0);border-radius:40%;transition:.1s} #shield.on{border-color:rgba(120,190,255,.45);box-shadow:inset 0 0 120px rgba(80,160,255,.25)}
+#cross{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px;border:2px solid rgba(159,232,255,.8);border-radius:50%}
+#hint{position:absolute;left:0;right:0;top:62%;text-align:center;font-size:17px;letter-spacing:.1em;color:var(--g);text-shadow:0 0 8px #000}
+#subtitle{position:absolute;left:10%;right:10%;bottom:70px;text-align:center;font-size:20px;color:#e9f8ff;text-shadow:0 0 10px #000;opacity:0;transition:opacity .5s} #subtitle.on{opacity:1}
+#card{position:absolute;right:22px;bottom:22px;width:300px;padding:14px 16px;background:var(--bg);border:1px solid rgba(159,232,255,.3);font-size:12.5px;opacity:0;transform:translateY(12px);transition:.4s}
+#card.on{opacity:1;transform:none} #card .ct{color:var(--c);letter-spacing:.14em;margin-bottom:8px} #card td{padding:2px 4px} #card td:last-child{text-align:right;color:#fff}
+#duelcap{position:absolute;left:0;right:0;top:16px;text-align:center;font-size:13px;letter-spacing:.14em;color:#cfe3f0;text-shadow:0 0 8px #000}
+#toasts{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center}
+.toast{margin:6px;padding:8px 16px;background:rgba(10,30,50,.7);border:1px solid rgba(159,232,255,.35);color:#e6f6ff;letter-spacing:.1em;animation:fade 2.6s forwards}
+@keyframes fade{0%{opacity:0;transform:translateY(8px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+</style></head><body>
+<canvas id="view"></canvas><div id="loading">RESTORING THE ARCHIVE…</div>
+<div id="hud"><div id="where"></div>
+ <div id="meters"><div class="meter">ARCHIVE FLOW <span id="flowtxt" style="float:right"></span><div id="flow"><i id="flowbar"></i></div></div>
+  <div class="meter">REALITY STABILITY <span id="stabtxt" style="float:right"></span><div id="stab"><i id="stabbar"></i></div></div>
+  <div class="meter">GPU MEMORY · ARCHIVE <span id="vramtxt" style="float:right"></span><div id="vram"><i id="vrambar" style="background:#ffd27a"></i></div></div></div>
+ <div id="vitals"><div class="meter">INTEGRITY<div id="hp"><i id="hpbar"></i></div></div><div class="meter">SHIELD ENERGY<div id="en"><i id="enbar"></i></div></div></div>
+ <div id="shield"></div><div id="cross"></div><div id="hint"></div><div id="subtitle"></div><div id="card"></div><div id="toasts"></div><div id="duelcap"></div></div>
+
+<div class="screen" id="menu"><div class="panel">
+ <h1>THE LAST ARCHIVE</h1>
+ <div class="tag">You don't load the world. <b>The Archive returns it to you.</b></div>
+ <button class="btn" id="b-play">BEGIN RESTORATION</button>
+ <button class="btn" id="b-lab">ARCHIVE LAB</button>
+ <button class="btn" id="b-bench">ARCHIVE BENCHMARK</button>
+ <button class="btn" id="b-genome">GENOME JUMP · chr1</button>
+ <button class="btn" id="b-settings">SETTINGS</button>
+ <button class="btn" id="b-howto">HOW IT WORKS</button>
+ <button class="btn" id="b-credits">CREDITS</button>
+ <div class="foot" id="sizes"></div>
+ <div class="foot">decoder: aceapex commit 8ae26bf · zstd 1.5.7 level 19 · LZ4 1.10 HC level 12 · ACEAPEX fast 8, 256 KiB blocks · one WebAssembly module (emcc 7.0.0 -O3, no SIMD) · one thread</div>
+ <div class="foot" id="noglnote" style="color:#ffb3a0"></div>
+ <div class="foot">Click to look · WASD move · Shift run · E interact · LMB / F fire · RMB / Q shield · M switch decoder · Esc pause · every world has a return door behind its entrance</div>
+</div></div>
+<div class="screen" id="pause"><div class="panel"><h2>PAUSED</h2>
+ <button class="btn" id="b-resume">RESUME</button><button class="btn" id="b-psettings">SETTINGS</button><button class="btn" id="b-quit">QUIT TO MENU</button></div></div>
+<div class="screen" id="settings"><div class="panel" style="min-width:520px"><h2>SETTINGS</h2>
+ <label>Archive decoder <select id="s-codec"></select></label>
+ <label>Graphics <select id="s-quality"></select></label>
+ <label>Archive overload effects <input type="checkbox" id="s-overload"></label>
+ <label>Mouse sensitivity <input type="range" id="s-sens" min="0.3" max="2.5" step="0.1"></label>
+ <label>Volume <input type="range" id="s-volume" min="0" max="1" step="0.05"></label>
+ <p><small>Ultra renders at up to 1.5× your screen's pixel density with stronger bloom — it is meant to push the GPU.</small></p>
+ <button class="btn small back">BACK</button></div></div>
+<div class="screen" id="howto"><div class="panel"><h2>HOW IT WORKS</h2>
+ <p>Every world in this game — geometry and textures, 41 MB — lives in <b>one compressed archive</b> inside this page. Nothing is loaded at start except the Station.
+ When you approach a place, the Archive restores only the chunks you need, verifies each one against its sha256 (this check is done by the game, not by the decoders), and the GPU assembles them out of light. Chunks you leave behind fold away.</p>
+ <p>The same chunks are packed three ways so you can switch the decoder at any time (M): <b>ACEAPEX</b> (fast profile, read by region), <b>zstd</b> 1.5.7 level 19 and <b>LZ4HC</b> 1.10 level 12.
+ Restore cards and the benchmark show real timings from your machine. They are trade-offs: in our measurements zstd made the smallest archive and ACEAPEX and LZ4HC restored fastest; your machine may differ.</p>
+ <p><small>decoder: aceapex commit 8ae26bf · zstd 1.5.7 level 19 · LZ4 1.10 HC level 12 · ACEAPEX fast 8, 256 KiB blocks · one WebAssembly module (emcc 7.0.0 -O3, no SIMD) · one thread</small></p>
+ <p><small id="hwline"></small></p>
+ <p><small>Limits: a page opened from a file runs the decoders on one CPU core; browser timers are coarse (~0.1 ms), so the benchmark repeats each test. The worlds are procedural, not production game assets.</small></p>
+ <button class="btn small back">BACK</button></div></div>
+<div class="screen" id="credits"><div class="panel"><h2>CREDITS</h2>
+ <p><b>ACEAPEX</b> — compression and the Archive, by Yakiv Shavidze (MIT). Demo written by the author of ACEAPEX.<br><b>chr1</b> — human reference genome chromosome 1, UCSC hg38 (GRCh38), from https://hgdownload.soe.ucsc.edu/goldenPath/hg38/chromosomes/chr1.fa.gz (chr1.aet: 59 659 568 B).<br><b>three.js</b> — GPU rendering (MIT).<br><b>Zstandard</b> — Meta Platforms (BSD).<br><b>LZ4</b> — Yann Collet (BSD).<br>Built with Emscripten. Music and sound are synthesized in your browser. Textures and geometry are generated by the demo's own code.<br>Prepared with AI (Claude) and checked by the author.</p>
+ <p><small>decoder: aceapex commit 8ae26bf · zstd 1.5.7 level 19 · LZ4 1.10 HC level 12 · ACEAPEX fast 8, 256 KiB blocks · one WebAssembly module (emcc 7.0.0 -O3, no SIMD) · one thread</small></p>
+ <details><summary style="cursor:pointer;color:#9fe8ff">Licenses</summary><pre style="max-height:260px;overflow:auto;font-size:11px;white-space:pre-wrap">/*__LICENSES__*/</pre></details>
+ <button class="btn small back">BACK</button></div></div>
+<div class="screen" id="lab"><div class="panel" style="min-width:820px"><h2>ARCHIVE LAB</h2>
+ <div class="tag">Explore the trade-offs yourself. Colours: <b style="color:#3fd8ff">ACEAPEX</b> · <b style="color:#ffa53a">zstd</b> · <b style="color:#d65bff">LZ4HC</b> — portals, tunnels and assembling chunks wear the colour of the decoder in use. The chests by the core: volume = archive size.</div>
+ <h3 style="color:#9fe8ff;letter-spacing:.15em;margin:6px 0">PORTAL DUEL</h3>
+ <label>Scene <select id="d-scene"></select></label><label>Left portal <select id="d-a"></select></label><label>Right portal <select id="d-b"></select></label>
+ <button class="btn small" id="d-run">START DUEL</button> <span id="d-out" style="margin-left:14px"></span>
+ <h3 style="color:#9fe8ff;letter-spacing:.15em;margin:22px 0 6px">STRESS TEST</h3>
+ <label>Fragments requested at once <input type="range" id="s-n" min="1" max="73" value="8"> <b id="s-nv">8</b></label>
+ <button class="btn small" id="s-run">REQUEST</button><div id="s-out"></div>
+ <button class="btn small" id="b-genome2">GENOME JUMP · chr1 →</button>
+ <div id="allcores" style="display:none"><button class="btn small" id="c-run">ALL CORES</button><div id="c-out"></div></div><!-- LA2-CORES: forecast not met (22.11), kept off -->
+ <button class="btn small back">BACK</button></div></div>
+<div class="screen" id="genome"><div class="panel" style="min-width:820px"> <h2>GENOME JUMP · chr1</h2>
+ <p><small>A whole human chromosome (chr1, UCSC hg38 / GRCh38) lives in one ACEAPEX archive inside this page. Jump anywhere — only the blocks under the window are decoded.</small></p>
+ <label>Position <input type="range" id="g-pos" min="0" max="1000000" value="500000" style="min-width:360px"></label>
+ <label>Window <select id="g-win"><option value="4096">4 096 bases</option><option value="65536" selected>65 536 bases</option></select></label>
+ <button class="btn small" id="g-full">TIME THE WHOLE CHROMOSOME</button><div id="g-out"></div>
+ <button class="btn small back">BACK</button></div></div>
+<div class="screen" id="bench"><div class="panel" style="min-width:820px"><h2>ARCHIVE BENCHMARK</h2><div class="prog"><i id="benchbar"></i></div><div id="benchout"></div>
+ <button class="btn small back">BACK</button></div></div>
+<div class="screen" id="ending"><div class="panel" style="min-width:760px"><h1 style="font-size:44px">THE PLANET IS WHOLE</h1>
+ <div class="tag">The city under two moons, the frozen forest and the reactor were one world. The Archive kept it in pieces — and returned it, piece by piece.</div>
+ <div id="endstats"></div><button class="btn small" id="b-again">PLAY AGAIN</button></div></div>
+<script id="wasm-js">/*__WASM__*/</script>
+<script id="archive-data" type="application/octet-stream">/*__DATA__*/</script>
+<script id="chr1-data" type="application/octet-stream">/*__CHR1__*/</script>
+<script>/*__GAME__*/</script>
+</body></html>
