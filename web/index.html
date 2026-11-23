@@ -18,8 +18,9 @@ h2{margin:0 0 18px;letter-spacing:.2em;color:var(--c);font-weight:600}
 .btn.small{display:inline-block;width:auto;margin-top:22px}
 .foot{margin-top:24px;font-size:12px;color:#7d90a0;letter-spacing:.08em}
 label{display:flex;justify-content:space-between;align-items:center;gap:30px;margin:12px 0;font-size:16px;letter-spacing:.06em}
-select,input[type=range]{background:#0d1726;color:#e6f6ff;border:1px solid rgba(159,232,255,.35);padding:6px;min-width:200px}
+select,input[type=range],input:not([type]){background:#0d1726;color:#e6f6ff;border:1px solid rgba(159,232,255,.35);padding:6px;min-width:200px}
 p{line-height:1.6;color:#b9c9d6} small{color:#8aa0b2}
+#genome .btn.small{padding:7px 14px;font-size:12px;letter-spacing:1.5px;margin:0} #genome label{margin:0}
 table.bench{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px} .bench th,.bench td{border-bottom:1px solid rgba(159,232,255,.15);padding:8px 10px;text-align:left;vertical-align:top}
 .bench th{color:var(--c);font-weight:600} .verdict{color:#e6f6ff} .bad{color:#ff7a7a}
 .prog{height:4px;background:#13243a;margin:10px 0}.prog i{display:block;height:100%;width:0;background:var(--c)}
@@ -98,11 +99,19 @@ table.bench{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px} .b
  <button class="btn small" id="b-genome2">GENOME JUMP · chr1 →</button>
  <div id="allcores" style="display:none"><button class="btn small" id="c-run">ALL CORES</button><div id="c-out"></div></div><!-- LA2-CORES: forecast not met (22.11), kept off -->
  <button class="btn small back">BACK</button></div></div>
-<div class="screen" id="genome"><div class="panel" style="min-width:820px"> <h2>GENOME JUMP · chr1</h2>
- <p><small>A whole human chromosome (chr1, UCSC hg38 / GRCh38) lives in one ACEAPEX archive inside this page. Jump anywhere — only the blocks under the window are decoded.</small></p>
- <label>Position <input type="range" id="g-pos" min="0" max="1000000" value="500000" style="min-width:360px"></label>
- <label>Window <select id="g-win"><option value="4096">4 096 bases</option><option value="65536" selected>65 536 bases</option></select></label>
- <button class="btn small" id="g-full">TIME THE WHOLE CHROMOSOME</button><div id="g-out"></div>
+<div class="screen" id="genome"><div class="panel" style="min-width:860px;max-width:1100px"> <h2>GENOME JUMP · chr1</h2>
+ <p><small>A whole human chromosome (chr1, UCSC hg38 / GRCh38, 254 MB of FASTA) lives in one ACEAPEX archive inside this page. Jump anywhere — only the blocks under the window are decoded; watch them light up.</small></p>
+ <canvas id="g-map" style="width:100%;height:112px;display:block;cursor:crosshair;touch-action:none"></canvas><div id="g-prep"></div>
+ <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0">
+  <label>Position <input type="range" id="g-pos" min="0" max="1000000" value="500000" style="min-width:260px"></label>
+  <label>Window <select id="g-win"><option value="4096">4 096 bases</option><option value="65536" selected>65 536 bases</option></select></label>
+  <label>Go to <input id="g-goto" placeholder="chr1:155,000,000-155,004,096" style="width:220px"></label><button class="btn small" id="g-go">GO</button>
+ </div>
+ <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:4px 0 8px">
+  <label>Find motif <input id="g-motif" placeholder="TTAGGGTTAGGG" style="width:200px" maxlength="32"></label><button class="btn small" id="g-find">FIND</button>
+  <button class="btn small" id="g-auto">AUTOPILOT</button><button class="btn small" id="g-save">SAVE WINDOW AS FASTA</button><button class="btn small" id="g-full">TIME THE WHOLE CHROMOSOME</button>
+ </div>
+ <div id="g-scan"></div><div id="g-out"></div>
  <button class="btn small back">BACK</button></div></div>
 <div class="screen" id="bench"><div class="panel" style="min-width:820px"><h2>ARCHIVE BENCHMARK</h2><div class="prog"><i id="benchbar"></i></div><div id="benchout"></div>
  <button class="btn small back">BACK</button></div></div>

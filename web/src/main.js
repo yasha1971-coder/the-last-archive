@@ -7,7 +7,7 @@ import { ui, mb, hwLine } from "./ui.js";
 import { runBenchmark } from "./bench.js";
 import { measureDuel, measureStress, stressHtml, SCENES, verdictLine, measureCurve, curveSvg, measureCores, coresHtml } from "./lab.js";
 import { Pool } from "./pool.js";
-import { Genome, jumpHtml } from "./genome.js";
+import { Genome, GenomeMap, basesHtml, jumpHtml, scanHtml, prepHtml } from "./genome.js";
 import { DECODER_CSS } from "./archive.js";
 
 const S = Object.assign({ codec: "ACEAPEX", quality: "high", overloadFx: true, sens: 1, volume: 0.7 }, JSON.parse(localStorage.getItem("la2.settings") || "{}"));
@@ -61,18 +61,50 @@ async function boot() {
   on("s-run", async () => { ui.set("s-out", "<p>Requesting…</p>"); await new Promise(r => setTimeout(r, 30)); window.__LA2.measuring = true; const r = measureStress(A, +sn.value); window.__LA2.stress = r; if (!window.__LA2.curve) window.__LA2.curve = measureCurve(A); window.__LA2.measuring = false;
     ui.set("s-out", curveSvg(window.__LA2.curve, +sn.value) + stressHtml(r));
     game.surge = Math.min(1, Math.max(...Object.values(r.res).map(x => x.ms)) / 40); });
-  let genome = null, fullMs = 0;
+  let genome = null, gmap = null, fullMs = 0, lastJump = null, scanRes = null, hl = null, auto = null;
   const gpos = document.getElementById("g-pos"), gwin = document.getElementById("g-win");
   async function getGenome() { if (!genome) { ui.set("g-out", "<p>Opening the chromosome archive…</p>"); await new Promise(r => setTimeout(r, 20));
       const b64 = document.getElementById("chr1-data").textContent.trim(); if (!b64) throw new Error("this build has no chromosome inside");
       let b; try { b = new Uint8Array(await (await fetch("data:application/octet-stream;base64," + b64)).arrayBuffer()); }
       catch (e) { b = new Uint8Array(b64.length * 3 / 4); let o = 0; for (let i = 0; i < b64.length; i += 4 << 18) { const part = atob(b64.slice(i, i + (4 << 18))); for (let k = 0; k < part.length; k++) b[o++] = part.charCodeAt(k); } b = b.subarray(0, o); }   // fallback: decode in pieces
-      genome = new Genome(M, b); window.__LA2.genome = genome; } return genome; }
-  const jump = async () => { try { const g = await getGenome(), start = Math.floor(+gpos.value / 1e6 * (g.bases - +gwin.value)); window.__LA2.measuring = true;
-      const r = g.jump(start, +gwin.value); window.__LA2.measuring = false; window.__LA2.jump = r; ui.set("g-out", jumpHtml(g, start, r, fullMs)); } catch (e) { window.__LA2.measuring = false; ui.set("g-out", `<p class="bad">${e.message}</p>`); } };
-  gpos.oninput = jump; gwin.onchange = jump;
+      const g = new Genome(M, b); window.__LA2.genome = g;
+      ui.set("g-out", `<p>Building the chromosome map: decoding all ${g.blocks.toLocaleString("en")} blocks once…</p>`); await new Promise(r => setTimeout(r, 30));
+      window.__LA2.measuring = true; g.prep(); window.__LA2.measuring = false; ui.set("g-prep", prepHtml(g));
+      gmap = new GenomeMap(document.getElementById("g-map"), g, (f) => { stopAuto(); hl = null; gpos.value = Math.round(f * 1e6); jump(); });
+      window.__LA2.gmap = gmap; genome = g; } return genome; }
+  const winN = () => +gwin.value;
+  async function jumpTo(start, n) {
+    try { const g = await getGenome(); start = Math.max(0, Math.min(g.bases - n, Math.floor(start)));
+      window.__LA2.measuring = true; const r = g.jump(start, n); window.__LA2.measuring = false; window.__LA2.jump = r; lastJump = r;
+      gmap.win = [start, n]; gmap.light(r.k0, r.k1); gmap.start(); ui.set("g-out", jumpHtml(g, r, fullMs, hl)); }
+    catch (e) { window.__LA2.measuring = false; ui.set("g-out", `<p class="bad">${e.message}</p>`); } }
+  const jump = async () => { const g = await getGenome(); return jumpTo(+gpos.value / 1e6 * (g.bases - winN()), winN()); };
+  gpos.oninput = () => { stopAuto(); hl = null; jump(); }; gwin.onchange = () => { hl = null; jump(); };
+  on("g-go", async () => { stopAuto(); const g = await getGenome(); const nums = (document.getElementById("g-goto").value.replace(/chr1:?/i, "").replace(/[, _]/g, "").match(/\d+/g) || []).map(Number);
+    if (!nums.length) return; const s = Math.max(1, nums[0]) - 1, n = nums[1] > nums[0] ? Math.min(262144, nums[1] - nums[0] + 1) : winN(); hl = null;
+    gpos.value = Math.round(s / Math.max(1, g.bases - n) * 1e6); jumpTo(s, n); });
+  on("g-find", async () => { stopAuto(); const mot = document.getElementById("g-motif").value.toUpperCase().replace(/[^ACGT]/g, "");
+    if (mot.length < 4) { ui.set("g-scan", "<p class='bad'>Type 4–32 letters of A, C, G, T.</p>"); return; }
+    const g = await getGenome(); ui.set("g-scan", `<p>Streaming all ${(g.size / 1e6).toFixed(0)} MB for ${mot} on both strands…</p>`); await new Promise(r => setTimeout(r, 30));
+    window.__LA2.measuring = true; const sr = g.scan(mot); window.__LA2.measuring = false; scanRes = sr; window.__LA2.scan = sr; gmap.hits = sr.hits; gmap.start(); ui.set("g-scan", scanHtml(g, sr)); });
+  document.getElementById("g-scan").onclick = (e) => { const a = e.target.closest("[data-hit]"); if (!a || !scanRes) return; e.preventDefault(); stopAuto();
+    const [p] = scanRes.hits[+a.dataset.hit], s = Math.max(0, p - 30); hl = [p - s, scanRes.motif.length]; jumpTo(s, winN()); };
+  on("g-save", () => { if (!lastJump) return; const g = genome, blob = new Blob([g.fasta(lastJump)], { type: "text/plain" }), a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `chr1_${lastJump.start + 1}-${lastJump.start + lastJump.seq.length}.fa`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
+  // AUTOPILOT: one random jump per frame; decode time summed over all jumps (single jumps are below the timer's resolution)
+  function stopAuto() { if (!auto) return; auto.on = false; auto = null; window.__LA2.measuring = false; document.getElementById("g-auto").textContent = "AUTOPILOT"; }
+  on("g-auto", async () => { if (auto) { stopAuto(); return; } const g = await getGenome(); const A2 = auto = { on: true, n: 0, ms: 0, t0: performance.now() };
+    document.getElementById("g-auto").textContent = "STOP AUTOPILOT"; window.__LA2.measuring = true; gmap.start(); hl = null;
+    const step = () => { if (!A2.on) return; const n = winN(), s = Math.floor(Math.random() * (g.bases - n)), t = performance.now(), [b0, b1] = g.quick(s, n); A2.ms += performance.now() - t; A2.n++;
+      const [k0, k1] = g.blockSpan(s, n); gmap.light(k0, k1); gmap.win = [s, n]; gpos.value = Math.round(s / (g.bases - n) * 1e6);
+      const sec = (performance.now() - A2.t0) / 1000; window.__LA2.auto = { n: A2.n, us: A2.ms / A2.n * 1000, perSec: A2.n / sec };
+      ui.set("g-out", `<p>AUTOPILOT · chr1:<b>${(s + 1).toLocaleString("en")}</b> · ${A2.n.toLocaleString("en")} jumps · <b>${(A2.ms / A2.n * 1000).toFixed(0)} µs</b> average decode per jump · ${(A2.n / sec).toFixed(0)} jumps per second (one per frame)</p>
+        <div style="font:12px/1.25 monospace;background:rgba(0,0,0,.35);padding:8px;max-height:150px;overflow:hidden;letter-spacing:.5px">${basesHtml(g.text(b0, b1))}</div>`);
+      requestAnimationFrame(step); };
+    requestAnimationFrame(step); });
   const openGenome = () => { ui.show("genome"); jump(); }; on("b-genome", openGenome); on("b-genome2", openGenome);
-  on("g-full", async () => { const g = await getGenome(); ui.set("g-out", "<p>Decoding all 254 MB…</p>"); await new Promise(r => setTimeout(r, 20)); window.__LA2.measuring = true; fullMs = g.full(); window.__LA2.measuring = false; window.__LA2.fullMs = fullMs; jump(); });
+  on("g-full", async () => { stopAuto(); const g = await getGenome(); ui.set("g-out", "<p>Decoding all 254 MB…</p>"); await new Promise(r => setTimeout(r, 20)); window.__LA2.measuring = true; fullMs = g.full(); window.__LA2.measuring = false; window.__LA2.fullMs = fullMs; jump(); });
+  for (const b of document.querySelectorAll("#genome .back")) b.addEventListener("click", () => { stopAuto(); if (gmap) gmap.stop(); });
   let pool = null;
   on("c-run", async () => {
     ui.set("c-out", "<p>Starting the workers…</p>"); await new Promise(r => setTimeout(r, 30));

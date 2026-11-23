@@ -21,8 +21,13 @@ Demo written by the author of ACEAPEX. Prepared with AI (Claude) and checked by 
 - **Archive Lab**: Portal Duel (one scene restored by two decoders, per-chunk timings measured, replayed on two pedestals slowed
   by a stated factor; [R] replays at real speed), Stress Test (fragments requested at once → frames dropped at 60 Hz), chests
   whose volume is each archive's size.
-- **Genome Jump**: human chr1 (UCSC hg38, 254 MB FASTA) in one ACEAPEX archive (59.7 MB) inside the page; a slider jumps
-  anywhere and only the 64 KiB blocks under the window are decoded.
+- **Genome Jump**: human chr1 (UCSC hg38, 254 MB FASTA) in one ACEAPEX archive (59.7 MB) inside the page. Opening it
+  streams all 3 875 blocks once and draws the chromosome: GC content of each 64 KiB block, N gaps, soft-masked repeats.
+  Click or drag anywhere (or type `chr1:start-end`): only the blocks under the window are decoded and light up. Each jump
+  is priced three ways, measured live: ACEAPEX region, the same region from a 2bit copy (UCSC .2bit layout, built in memory
+  by that first pass — the faster format for region reads, 8.8 % larger), and the same decoder without an index (from the
+  start). Find a motif on both strands over the whole chromosome, jump to hits, save the window as FASTA, or run AUTOPILOT
+  (one random jump per frame).
 
 ## What is compared, exactly
 | | packing | where it is read |
@@ -64,7 +69,7 @@ Pinned toolchain — any other version may produce other bytes:
 npm install    # three 0.170.0, esbuild 0.24.0
 ACEAPEX=<aceapex@8ae26bf> ZSTD=<zstd-1.5.7> LZ4=<lz4-1.10.0> bash build.sh    # writes TheLastArchive.html
 sha256sum TheLastArchive.html
-# expected: 763b2432c4e89f3e4be3272d41c81b7d11d8d339321820a30b623be01a6cb158  (106 793 784 B)
+# expected: a4cdad1efa7aa9367473d0cdce0feb37774af9a55361af2f8d6ff9dc217c2b1c  (106 809 615 B)
 ```
 
 ## Credits and licenses
