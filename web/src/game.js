@@ -329,13 +329,13 @@ export class Game {
 
   // ---------------- frame ----------------
   update(dtReal) {
-    const dt = Math.min(dtReal, 0.05), dtv = Math.min(dtReal, 0.25); this.dtv = dtv;   // dtv: visual clocks keep real time on slow machines this.t += dt; this.frameMs += (dtReal * 1000 - this.frameMs) * 0.1; if (dtReal > 0.020) this.stats.slow++;
+    const dt = Math.min(dtReal, 0.05), dtv = Math.min(dtReal, 0.25); this.dtv = dtv;   /* dtv: visual clocks keep real time on slow machines */ this.t += dt; this.frameMs += (dtReal * 1000 - this.frameMs) * 0.1; if (dtReal > 0.020) this.stats.slow++;
     const P = this.place; if (!P) return;
     if (!this.paused && !this.tunnel) {
       const sens = 0.0022 * this.S.sens; this.yaw -= this.mouse.dx * sens; this.pitch = Math.max(-1.3, Math.min(1.3, this.pitch - this.mouse.dy * sens));
       if (this.down.ArrowLeft) this.yaw += dt * 2.2; if (this.down.ArrowRight) this.yaw -= dt * 2.2;
       const sp = (this.down.ShiftLeft ? 9 : 5.5) * dt, f = new THREE.Vector2(-Math.sin(this.yaw), -Math.cos(this.yaw)), r = new THREE.Vector2(-f.y, f.x); let mv = new THREE.Vector2();
-      if (this.down.KeyW || this.down.ArrowUp) mv.add(f); if (this.down.KeyS || this.down.ArrowDown) mv.sub(f); if (this.down.KeyD) mv.sub(r); if (this.down.KeyA) mv.add(r);
+      if (this.down.KeyW || this.down.ArrowUp) mv.add(f); if (this.down.KeyS || this.down.ArrowDown) mv.sub(f); if (this.down.KeyD) mv.add(r); if (this.down.KeyA) mv.sub(r);
       if (mv.lengthSq()) mv.normalize().multiplyScalar(sp);
       const cols = this.colliders(P), blocked = (x, z) => cols.some(b => x > b[0] - .4 && x < b[2] + .4 && z > b[1] - .4 && z < b[3] + .4);
       if (!blocked(this.pos.x + mv.x, this.pos.y)) this.pos.x += mv.x; if (!blocked(this.pos.x, this.pos.y + mv.y)) this.pos.y += mv.y;
